@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Department Milestone Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h2>🎯 IT Tracker</h2>
+        <p class="subtitle">Milestone Dashboard</p>
+      </div>
+      <ul class="nav-links">
+        <li class="active" data-tab="dashboard"><span class="icon">📊</span> Dashboard</li>
+        <li data-tab="milestones"><span class="icon">🏁</span> Milestones</li>
+        <li data-tab="smallwins"><span class="icon">⚡</span> Small Wins</li>
+        <li data-tab="sla"><span class="icon">📈</span> SLA Tracker</li>
+        <li data-tab="devupdate"><span class="icon">🚀</span> Dev Update</li>
+        <li data-tab="settings"><span class="icon">⚙️</span> Settings</li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="exportBtn" class="btn btn-sm">📤 Export Data</button>
+        <button id="importBtn" class="btn btn-sm">📥 Import Data</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- DASHBOARD TAB -->
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="tab-header">
+          <h1>Dashboard</h1>
+          <div class="date-display" id="currentDate"></div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">🏁</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-label">Total Milestones</div>
+            </div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-completed">0</div>
+              <div class="stat-label">Completed</div>
+            </div>
+          </div>
+          <div class="stat-card stat-yellow">
+            <div class="icon">🔄</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-inprogress">0</div>
+              <div class="stat-label">In Progress</div>
+            </div>
+          </div>
+          <div class="stat-card stat-red">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-overdue">0</div>
+              <div class="stat-label">Overdue</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Overall Progress</h3>
+            <div class="chart-container">
+              <canvas id="progressChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Progress by Phase</h3>
+            <div class="chart-container">
+              <canvas id="phaseChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Timeline Progress</h3>
+          <div id="timeline" class="timeline"></div>
+        </div>
+
+        <div class="card">
+          <h3>Recent Activity</h3>
+          <div id="recentActivity" class="activity-list"></div>
+        </div>
+      </section>
+
+      <!-- MILESTONES TAB -->
+      <section id="tab-milestones" class="tab-content">
+        <div class="tab-header">
+          <h1>Milestones</h1>
+          <button class="btn btn-primary" id="addMilestoneBtn">+ Add Milestone</button>
+        </div>
+
+        <div class="filter-bar">
+          <select id="filterPhase">
+            <option value="all">All Phases</option>
+            <option value="1">Phase 1: Quick Wins</option>
+            <option value="2">Phase 2: Foundation</option>
+            <option value="3">Phase 3: Delivery</option>
+            <option value="4">Phase 4: Culture</option>
+          </select>
+          <select id="filterStatus">
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <input type="text" id="searchMilestone" placeholder="Search milestones...">
+        </div>
+
+        <div id="milestoneList" class="milestone-list"></div>
+      </section>
+
+      <!-- SMALL WINS TAB -->
+      <section id="tab-smallwins" class="tab-content">
+        <div class="tab-header">
+          <h1>Small Wins</h1>
+          <button class="btn btn-primary" id="addSmallWinBtn">+ Add Small Win</button>
+        </div>
+
+        <div class="smallwin-scoring-info">
+          <div class="card">
+            <h3>Small Win Scoring Matrix</h3>
+            <p>Score each candidate 1–5. Formula: <strong>(Visibility × 2) + Effort + Pain + Symbolic</strong></p>
+            <div class="score-legend">
+              <span class="badge badge-green">18–25: Top Priority</span>
+              <span class="badge badge-yellow">13–17: Do Next</span>
+              <span class="badge badge-gray">8–12: Nice to Have</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="smallWinList" class="smallwin-list"></div>
+      </section>
+
+      <!-- SLA TRACKER TAB -->
+      <section id="tab-sla" class="tab-content">
+        <div class="tab-header">
+          <h1>SLA Tracker</h1>
+          <button class="btn btn-primary" id="addSlaRecordBtn">+ Record SLA</button>
+        </div>
+
+        <div class="sla-summary-grid">
+          <div class="chart-card">
+            <h3>SLA Compliance Trend</h3>
+            <div class="chart-container">
+              <canvas id="slaTrendChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>SLA by Priority</h3>
+            <div class="chart-container">
+              <canvas id="slaPriorityChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>SLA Targets</h3>
+          <div id="slaTargets" class="sla-targets"></div>
+        </div>
+
+        <div class="card">
+          <h3>SLA Records</h3>
+          <div id="slaRecords" class="sla-records"></div>
+        </div>
+      </section>
+
+      <!-- DEV UPDATE TAB -->
+      <section id="tab-devupdate" class="tab-content">
+        <div class="tab-header">
+          <h1>Dev Update Generator</h1>
+          <button class="btn btn-primary" id="addDevUpdateBtn">+ New Update</button>
+        </div>
+
+        <div class="devupdate-layout">
+          <div class="card">
+            <h3>Generate Weekly Update</h3>
+            <form id="devUpdateForm">
+              <div class="form-group">
+                <label>Week Of</label>
+                <input type="date" id="du-week" required>
+              </div>
+              <div class="form-group">
+                <label>✅ Shipped This Week (one per line)</label>
+                <textarea id="du-shipped" rows="4" placeholder="- CSV Export for reports&#10;- Login timeout fix&#10;- Dashboard speed improved 4x"></textarea>
+              </div>
+              <div class="form-group">
+                <label>🔄 In Progress (one per line)</label>
+                <textarea id="du-progress" rows="3" placeholder="- Viewer-Only Role — HR — ETA: Jun 5&#10;- Timezone Bug Fix — Sales — ETA: Jun 4"></textarea>
+              </div>
+              <div class="form-group">
+                <label>📋 Coming Next Week (one per line)</label>
+                <textarea id="du-next" rows="3" placeholder="- Notification System — Operations&#10;- Bulk Import — Finance"></textarea>
+              </div>
+              <div class="form-group">
+                <label>⚠️ Known Issues (one per line)</label>
+                <textarea id="du-issues" rows="2" placeholder="- Report generation running slow — investigating"></textarea>
+              </div>
+              <div class="form-group">
+                <label>📢 Need From Stakeholders</label>
+                <textarea id="du-need" rows="2" placeholder="- Submit feature requests by Friday via form link"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Generate Update</button>
+                <button type="button" class="btn" id="copyDevUpdate">📋 Copy to Clipboard</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Preview</h3>
+            <div id="devUpdatePreview" class="devupdate-preview">
+              <p class="empty-state">Fill in the form and click "Generate Update" to see the preview.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Update History</h3>
+          <div id="devUpdateHistory" class="devupdate-history"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" class="tab-content">
+        <div class="tab-header">
+          <h1>Settings</h1>
+        </div>
+
+        <div class="settings-grid">
+          <div class="card">
+            <h3>Project Info</h3>
+            <div class="form-group">
+              <label>Project Name</label>
+              <input type="text" id="setting-project-name" value="IT Department Transformation">
+            </div>
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="setting-start-date">
+            </div>
+            <div class="form-group">
+              <label>Target End Date</label>
+              <input type="date" id="setting-end-date">
+            </div>
+            <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+          </div>
+
+          <div class="card">
+            <h3>SLA Targets Configuration</h3>
+            <div id="slaTargetsConfig"></div>
+            <button class="btn btn-primary" id="saveSlaTargets">Save SLA Targets</button>
+          </div>
+
+          <div class="card">
+            <h3>Data Management</h3>
+            <div class="form-actions">
+              <button class="btn btn-danger" id="resetDataBtn">🗑️ Reset All Data</button>
+              <button class="btn" id="loadSampleBtn">📋 Load Sample Data</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Modal</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
