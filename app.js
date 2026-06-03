@@ -33,17 +33,63 @@
   let data;
   let progressChart, phaseChart, slaTrendChart, slaPriorityChart;
 
+  var _isRemoteUpdate = false;
+
+  function isSyncEnabled() {
+    var fe = typeof FIREBASE_ENABLED !== 'undefined' && FIREBASE_ENABLED;
+    var dd = typeof db !== 'undefined' && db;
+    var fp = typeof FIRESTORE_DOC_PATH !== 'undefined';
+    console.log('[Sync] isSyncEnabled check:', 'FIREBASE_ENABLED=' + fe, 'db=' + dd, 'DOC_PATH=' + fp);
+    return fe && dd && fp;
+  }
+
   function loadData() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      data = raw ? { ...DEFAULT_DATA, ...JSON.parse(raw) } : { ...DEFAULT_DATA };
-    } catch {
-      data = { ...DEFAULT_DATA };
+      var raw = localStorage.getItem(STORAGE_KEY);
+      data = raw ? JSON.parse(raw) : {};
+      data = Object.assign({}, DEFAULT_DATA, data);
+    } catch(e) {
+      data = Object.assign({}, DEFAULT_DATA);
+    }
+
+    if (isSyncEnabled()) {
+      var docRef = db.doc(FIRESTORE_DOC_PATH);
+      docRef.onSnapshot(function(snap) {
+        if (snap.exists) {
+          _isRemoteUpdate = true;
+          data = Object.assign({}, DEFAULT_DATA, snap.data());
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          renderAll();
+          _isRemoteUpdate = false;
+        }
+        updateSyncStatus('synced');
+      }, function(err) {
+        console.warn('[Sync] Snapshot error:', err);
+        updateSyncStatus('error');
+      });
     }
   }
 
   function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    if (isSyncEnabled() && !_isRemoteUpdate) {
+      var docRef = db.doc(FIRESTORE_DOC_PATH);
+      docRef.set(data).then(function() {
+        updateSyncStatus('synced');
+      }).catch(function(err) {
+        console.warn('[Sync] Write error:', err);
+        updateSyncStatus('error');
+      });
+    }
+  }
+
+  function updateSyncStatus(status) {
+    var el = document.getElementById('sync-indicator');
+    if (!el) return;
+    var labels = { 'synced': '\u2705 Synced', 'syncing': '\u23F7 Syncing...', 'error': '\u26A0 Error', 'offline': '\u20D3 Offline' };
+    el.textContent = labels[status] || status;
+    el.className = 'sync-indicator sync-' + status;
   }
 
   function genId() {
@@ -996,4 +1042,14 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (isSyncEnabled()) {
+      db.doc(FIRESTORE_DOC_PATH).onSnapshot(function() {}, function(err) {
+        updateSyncStatus('error');
+      });
+    } else {
+      updateSyncStatus('offline');
+    }
+  });
 })();
