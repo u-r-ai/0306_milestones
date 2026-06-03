@@ -39,7 +39,6 @@
     var fe = typeof FIREBASE_ENABLED !== 'undefined' && FIREBASE_ENABLED;
     var dd = typeof db !== 'undefined' && db;
     var fp = typeof FIRESTORE_DOC_PATH !== 'undefined';
-    console.log('[Sync] isSyncEnabled check:', 'FIREBASE_ENABLED=' + fe, 'db=' + dd, 'DOC_PATH=' + fp);
     return fe && dd && fp;
   }
 
@@ -71,7 +70,13 @@
   }
 
   function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('[Storage] Failed to save to localStorage:', e);
+      toast('Failed to save data — storage may be full.');
+      return;
+    }
 
     if (isSyncEnabled() && !_isRemoteUpdate) {
       var docRef = db.doc(FIRESTORE_DOC_PATH);
@@ -131,7 +136,39 @@
         li.classList.add('active');
         document.getElementById('tab-' + li.dataset.tab).classList.add('active');
         if (li.dataset.tab === 'dashboard') renderDashboard();
+        closeSidebar();
       });
+    });
+  }
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  function openSidebar() {
+    document.querySelector('.sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('visible');
+    document.getElementById('sidebarToggle').classList.add('active');
+  }
+
+  function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+    document.getElementById('sidebarToggle').classList.remove('active');
+  }
+
+  function initSidebar() {
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+    window.addEventListener('resize', () => {
+      if (!isMobile()) closeSidebar();
     });
   }
 
@@ -584,7 +621,7 @@
 
     el.innerHTML = [...data.slaRecords].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20).map(r => {
       const target = data.slaTargets.find(t => t.id === r.targetId);
-      const met = target ? (target.lower ? r.value <= target.value : r.value >= target.value) : false;
+      const met = target ? (target.lower ? r.value <= target.target : r.value >= target.target) : false;
       return `
         <div class="sla-record-item">
           <div>
@@ -978,7 +1015,7 @@
   }
 
   function escAttr(str) {
-    return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   // ── Render All ──
@@ -996,6 +1033,7 @@
     loadData();
     initTabs();
     initModal();
+    initSidebar();
 
     // Set default week for dev update
     const today = new Date();
@@ -1038,18 +1076,12 @@
       if (e.target.files[0]) importData(e.target.files[0]);
     });
 
+    if (!isSyncEnabled()) {
+      updateSyncStatus('offline');
+    }
+
     renderAll();
   }
 
   document.addEventListener('DOMContentLoaded', init);
-
-  document.addEventListener('DOMContentLoaded', function() {
-    if (isSyncEnabled()) {
-      db.doc(FIRESTORE_DOC_PATH).onSnapshot(function() {}, function(err) {
-        updateSyncStatus('error');
-      });
-    } else {
-      updateSyncStatus('offline');
-    }
-  });
 })();

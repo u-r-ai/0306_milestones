@@ -25,12 +25,16 @@
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
+html { overflow-x: hidden; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 .app {
@@ -72,6 +76,7 @@ body {
   list-style: none;
   padding: 12px 10px;
   flex: 1;
+  overflow-y: auto;
 }
 
 .nav-links li {
@@ -237,6 +242,8 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover { background: var(--bg-hover); }
@@ -367,7 +374,7 @@ body {
   border-color: var(--accent-red);
 }
 
-.milestone-info { flex: 1; min-width: 0; }
+.milestone-info { flex: 1; min-width: 0; overflow-wrap: break-word; }
 
 .milestone-title {
   font-weight: 600;
@@ -542,6 +549,7 @@ body {
   padding: 20px;
   font-size: 0.9rem;
   white-space: pre-wrap;
+  word-break: break-word;
   line-height: 1.7;
   max-height: 600px;
   overflow-y: auto;
@@ -710,25 +718,520 @@ body {
 }
 
 /* ── Responsive ── */
+
+/* Hamburger toggle button - hidden on desktop */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 200;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px;
+}
+
+.sidebar-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: all 0.25s ease;
+}
+
+.sidebar-toggle.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.sidebar-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.sidebar-toggle.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Sidebar overlay - hidden on desktop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+}
+
+/* Tablet: <= 1024px */
 @media (max-width: 1024px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-grid { grid-template-columns: 1fr; }
   .sla-summary-grid { grid-template-columns: 1fr; }
   .devupdate-layout { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .sla-targets { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .content { padding: 32px 20px; max-width: 100%; }
 }
 
+/* Mobile: <= 768px */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 60px;
-    overflow: hidden;
+  .sidebar-toggle {
+    display: flex;
   }
-  .sidebar-header h2 { font-size: 0; }
-  .sidebar-header .subtitle { display: none; }
-  .nav-links li span:not(.icon) { display: none; }
-  .nav-links li { justify-content: center; padding: 12px; }
-  .content { margin-left: 60px; padding: 20px; }
-  .stats-grid { grid-template-columns: 1fr; }
-  .filter-bar { flex-direction: column; }
+
+  .sidebar-overlay {
+    display: block;
+    pointer-events: none;
+  }
+
+  .sidebar-overlay.visible {
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+
+  .sidebar-header h2 { font-size: 1.25rem; }
+  .sidebar-header .subtitle { display: block; }
+  .nav-links li span:not(.icon) { display: inline; }
+  .nav-links li { justify-content: flex-start; padding: 12px 14px; min-height: 44px; }
+
+  .sidebar-footer {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .sidebar-footer .btn {
+    flex: 1;
+    min-height: 40px;
+    justify-content: center;
+  }
+
+  .content {
+    margin-left: 0;
+    padding: 70px 16px 24px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .tab-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .tab-header .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+  }
+
+  .chart-container {
+    height: 220px;
+  }
+
+  .card {
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-bar select,
+  .filter-bar input {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .filter-bar input {
+    min-width: 0;
+  }
+
+  .milestone-item {
+    padding: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .milestone-checkbox {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+
+  .milestone-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .milestone-actions .btn {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .milestone-meta {
+    gap: 10px;
+  }
+
+  .smallwin-item {
+    padding: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .smallwin-item .milestone-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .smallwin-score {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+  }
+
+  .sla-record-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .sla-record-item .btn {
+    min-height: 40px;
+  }
+
+  .devupdate-history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .devupdate-history-item > div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+  }
+
+  .devupdate-history-item .btn {
+    flex: 1;
+    min-height: 40px;
+    justify-content: center;
+  }
+
+  .devupdate-preview {
+    max-height: 400px;
+  }
+
+  .timeline {
+    flex-direction: column;
+    gap: 0;
+    padding: 10px 0;
+  }
+
+  .timeline::before {
+    top: 0;
+    bottom: 0;
+    left: 20px;
+    right: auto;
+    width: 3px;
+    height: auto;
+    transform: none;
+  }
+
+  .timeline-phase {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    padding: 10px 0 10px 40px;
+    position: relative;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+  }
+
+  .timeline-label {
+    font-size: 0.82rem;
+  }
+
+  .timeline-sub {
+    margin-top: 0;
+  }
+
+  .timeline-pct {
+    margin-top: 0;
+    margin-left: auto;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-grid .btn {
+    min-height: 44px;
+  }
+
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 16px 18px;
+  }
+
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-body {
+    padding: 18px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    text-align: center;
+  }
+
+  .sync-indicator {
+    top: 8px;
+    right: 60px;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+  .activity-item {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .activity-time {
+    width: 100%;
+    padding-left: 32px;
+  }
+
+  .score-legend {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Small phones: <= 480px */
+@media (max-width: 480px) {
+  .content {
+    padding: 64px 12px 20px;
+  }
+
+  .tab-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .card h3 {
+    font-size: 0.9rem;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .milestone-item {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .milestone-title {
+    font-size: 0.88rem;
+  }
+
+  .milestone-meta {
+    font-size: 0.72rem;
+    gap: 8px;
+  }
+
+  .smallwin-item {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .smallwin-title {
+    font-size: 0.88rem;
+  }
+
+  .smallwin-details {
+    font-size: 0.72rem;
+  }
+
+  .sla-target-item {
+    padding: 12px;
+  }
+
+  .sla-target-name {
+    font-size: 0.82rem;
+  }
+
+  .sla-record-item {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .devupdate-preview {
+    font-size: 0.82rem;
+    padding: 14px;
+    max-height: 300px;
+  }
+
+  .devupdate-history-item {
+    padding: 12px;
+    font-size: 0.82rem;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .modal-header h3 {
+    font-size: 1rem;
+  }
+
+  .badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+
+  .timeline-phase {
+    padding-left: 36px;
+  }
+
+  .timeline-label {
+    font-size: 0.78rem;
+  }
+
+  .timeline-pct {
+    font-size: 0.78rem;
+  }
+
+  .empty-state {
+    padding: 24px;
+    font-size: 0.82rem;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebar-footer {
+    flex-direction: column;
+  }
 }
 
 /* ── Toast ── */

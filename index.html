@@ -12,6 +12,10 @@
 </head>
 <body>
   <div id="sync-indicator" class="sync-indicator sync-offline">loading...</div>
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="app">
     <nav class="sidebar">
       <div class="sidebar-header">
@@ -57,7 +61,7 @@
             </div>
           </div>
           <div class="stat-card stat-yellow">
-            <div class="icon">🔄</div>
+            <div class="stat-icon">🔄</div>
             <div class="stat-info">
               <div class="stat-value" id="stat-inprogress">0</div>
               <div class="stat-label">In Progress</div>
