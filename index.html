@@ -25,12 +25,12 @@
       <ul class="nav-links">
         <li class="active" data-tab="dashboard"><span class="icon">📊</span> Dashboard</li>
         <li data-tab="milestones"><span class="icon">🏁</span> Milestones</li>
-        <li data-tab="smallwins"><span class="icon">⚡</span> Small Wins</li>
-        <li data-tab="sla"><span class="icon">📈</span> SLA Tracker</li>
-        <li data-tab="devupdate"><span class="icon">🚀</span> Dev Update</li>
-        <li data-tab="settings"><span class="icon">⚙️</span> Settings</li>
+        <li data-tab="smallwins" style="display:none"><span class="icon">⚡</span> Small Wins</li>
+        <li data-tab="sla" style="display:none"><span class="icon">📈</span> SLA Tracker</li>
+        <li data-tab="devupdate" style="display:none"><span class="icon">🚀</span> Dev Update</li>
+        <li data-tab="settings" style="display:none"><span class="icon">⚙️</span> Settings</li>
       </ul>
-      <div class="sidebar-footer">
+      <div class="sidebar-footer" style="display:none">
         <button id="exportBtn" class="btn btn-sm">📤 Export Data</button>
         <button id="importBtn" class="btn btn-sm">📥 Import Data</button>
         <input type="file" id="importFile" accept=".json" style="display:none">
@@ -291,6 +291,27 @@
         <button class="modal-close" id="modal-close">&times;</button>
       </div>
       <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- PIN MODAL -->
+  <div id="pin-overlay" class="modal-overlay hidden">
+    <div class="modal pin-modal">
+      <div class="modal-header">
+        <h3>🔒 Enter PIN</h3>
+        <button class="modal-close" id="pin-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="pin-hint">Enter PIN to modify milestones</p>
+        <div class="pin-input-group">
+          <input type="password" id="pin-input" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+        </div>
+        <p class="pin-error hidden" id="pin-error">Incorrect PIN. Try again.</p>
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" id="pin-submit">Submit</button>
+          <button type="button" class="btn" id="pin-cancel">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 

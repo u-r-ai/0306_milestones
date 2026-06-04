@@ -183,6 +183,68 @@
     document.getElementById('modal-overlay').classList.add('hidden');
   }
 
+  // ── PIN Verification ──
+  const MILESTONE_PIN = '0416';
+  let pinVerifiedThisSession = false;
+
+  function verifyPin() {
+    if (pinVerifiedThisSession) {
+      return Promise.resolve(true);
+    }
+    return new Promise((resolve, reject) => {
+      const overlay = document.getElementById('pin-overlay');
+      const input = document.getElementById('pin-input');
+      const errorEl = document.getElementById('pin-error');
+      const submitBtn = document.getElementById('pin-submit');
+      const cancelBtn = document.getElementById('pin-cancel');
+      const closeBtn = document.getElementById('pin-close');
+
+      input.value = '';
+      errorEl.classList.add('hidden');
+      overlay.classList.remove('hidden');
+      setTimeout(() => input.focus(), 100);
+
+      function cleanup() {
+        overlay.classList.add('hidden');
+        submitBtn.removeEventListener('click', onSubmit);
+        cancelBtn.removeEventListener('click', onCancel);
+        closeBtn.removeEventListener('click', onCancel);
+        input.removeEventListener('keydown', onKeydown);
+      }
+
+      function onSubmit() {
+        if (input.value === MILESTONE_PIN) {
+          pinVerifiedThisSession = true;
+          cleanup();
+          resolve(true);
+        } else {
+          errorEl.classList.remove('hidden');
+          input.value = '';
+          input.focus();
+        }
+      }
+
+      function onCancel() {
+        cleanup();
+        resolve(false);
+      }
+
+      function onKeydown(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onSubmit();
+        } else if (e.key === 'Escape') {
+          onCancel();
+        }
+      }
+
+      submitBtn.addEventListener('click', onSubmit);
+      cancelBtn.addEventListener('click', onCancel);
+      closeBtn.addEventListener('click', onCancel);
+      input.addEventListener('keydown', onKeydown);
+    });
+  }
+
   function initModal() {
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-overlay').addEventListener('click', e => {
@@ -322,7 +384,11 @@
     }
     if (search) items = items.filter(m => m.title.toLowerCase().includes(search) || (m.description || '').toLowerCase().includes(search));
 
+    const statusOrder = { 'in-progress': 0, 'pending': 1, 'completed': 2 };
     items.sort((a, b) => {
+      const sa = statusOrder[a.status] ?? 1;
+      const sb = statusOrder[b.status] ?? 1;
+      if (sa !== sb) return sa - sb;
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -371,16 +437,18 @@
     });
 
     el.querySelectorAll('[data-action="edit"]').forEach(btn => {
-      btn.addEventListener('click', e => {
+      btn.addEventListener('click', async e => {
         e.stopPropagation();
-        openMilestoneModal(btn.dataset.id);
+        const ok = await verifyPin();
+        if (ok) openMilestoneModal(btn.dataset.id);
       });
     });
 
     el.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.addEventListener('click', e => {
+      btn.addEventListener('click', async e => {
         e.stopPropagation();
-        if (confirm('Delete this milestone?')) {
+        const ok = await verifyPin();
+        if (ok && confirm('Delete this milestone?')) {
           data.milestones = data.milestones.filter(m => m.id !== btn.dataset.id);
           addActivity('🗑️', `Deleted milestone`);
           saveData();
@@ -390,7 +458,9 @@
     });
   }
 
-  function cycleMilestoneStatus(id) {
+  async function cycleMilestoneStatus(id) {
+    const ok = await verifyPin();
+    if (!ok) return;
     const m = data.milestones.find(x => x.id === id);
     if (!m) return;
     const order = ['pending', 'in-progress', 'completed'];
@@ -1042,7 +1112,10 @@
     document.getElementById('du-week').value = monday.toISOString().split('T')[0];
 
     // Milestone events
-    document.getElementById('addMilestoneBtn').addEventListener('click', () => openMilestoneModal());
+    document.getElementById('addMilestoneBtn').addEventListener('click', async () => {
+      const ok = await verifyPin();
+      if (ok) openMilestoneModal();
+    });
     document.getElementById('filterPhase').addEventListener('change', renderMilestones);
     document.getElementById('filterStatus').addEventListener('change', renderMilestones);
     document.getElementById('searchMilestone').addEventListener('input', renderMilestones);
